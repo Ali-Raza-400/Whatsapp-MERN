@@ -6,6 +6,8 @@ const connectDB = require("./db.cont");
 const allowedOrigins = require("./config/allowedOrigins.js");
 const app = express();
 const port = process.env.PORT || 3500;
+const userRoutes = require("./routes/user.routes.js");
+const cookieParser =require("cookie-parser");
 
 connectDB();
 app.use(express.json());
@@ -16,6 +18,11 @@ const io = require("socket.io")(server, {
   // transports: ["polling"],
   cors: { origin: "*" },
 });
+app.use(express.urlencoded({ extended: true }));
+
+app.use(cookieParser());
+
+app.use("/api/users", userRoutes);
 
 require("./socketio.js")(io);
 

@@ -4,22 +4,33 @@ import ChatBar from "../src/ChatBar";
 import SideBar from "../src/SideBar";
 import { io } from "socket.io-client";
 import { useSocket } from "./hooks/useSocket";
+import {
+  createBrowserRouter,
+  createRoutesFromElements,
+  Route,
+  RouterProvider,
+} from "react-router-dom";
+import HomeScreen from "./screens/HomeScreen";
+import LoginScreen from "./screens/LoginScreen";
+import RegisterScreen from "./screens/RegisterScreen";
+import PrivateRoute from "./components/PrivateRoute";
+import ProfileScreen from "./screens/ProfileScreen";
+import Header from "./components/Header";
+import { Outlet } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import { Container } from "react-bootstrap";
 
 function App() {
-  const [messages, setMessages] = useState([]);
-  const [userInfo, setUserInfo] = useState(null);
 
-  const socket = useSocket();
-
-  useEffect(() => {
-    if (userInfo && socket) {
-      socket.emit("joinRoom", userInfo);
-    }
-  }, [userInfo, socket]);
 
   return (
     <div>
-      <div className="app">
+      <Header />
+      <ToastContainer />
+      <Container className="my-2">
+        <Outlet />
+      </Container>
+      {/* <div className="app">
         <div className="app__body">
           <SideBar
             socket={socket}
@@ -36,7 +47,7 @@ function App() {
             userInfo={userInfo}
           />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
