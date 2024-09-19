@@ -1,28 +1,50 @@
-// import { SOCKET_URI } from "@/config";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import io from "socket.io-client";
 
+// Initialize socket connection outside the hook to avoid re-connection on each re-render
+const socket = io("http://localhost:5000");
 
-export function useSocket() {
-  const socketRef = useRef();
+const useSocket = (userId, recipientId) => {
+  const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    socketRef.current = io('http://localhost:3500');
+    if (userId && recipientId) {
+      // Generate the roomId by sorting user IDs
+      const roomId = [userId, recipientId].sort().join('-');
+      
+      // Join the room
+      socket.emit("joinRoom", { roomId });
 
-    socketRef.current.on("connect", () => {
-      console.log("Connected:", socketRef.current.id);
-    });
+      // Listen for incoming messages
+      socket.on("message", (newMessage) => {
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      });
 
-    socketRef.current.on("disconnect", () => {
-      console.log("Disconnected:", socketRef.current.id);
-    });
+      // Leave the room when switching users or unmounting
+      return () => {
+        socket.emit("leaveRoom", { roomId });
+        socket.off("message"); // Unsubscribe from message event to prevent duplication
+      };
+    }
+  }, [userId, recipientId]); // Re-run effect when userId or recipientId changes
 
+  // Send message function
+  const sendMessage = (message) => {
+    if (message.trim()) {
+      const roomId = [userId, recipientId].sort().join('-');
+      socket.emit("sendMessage", { roomId, message });
+      setMessages((prevMessages) => [...prevMessages, message]); // Update local message list
+    }
+  };
+
+  // Clean up the socket when the component unmounts
+  useEffect(() => {
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      socket.disconnect();
     };
   }, []);
 
-  return socketRef.current;
-}
+  return { messages, sendMessage };
+};
+
+export default useSocket;

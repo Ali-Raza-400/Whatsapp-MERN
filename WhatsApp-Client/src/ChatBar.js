@@ -8,47 +8,24 @@ import MoreVert from "@mui/icons-material/MoreVert";
 import { Avatar, IconButton } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import "./Chat.css";
+import { useSelector } from "react-redux";
+import useSocket from "./hooks/useSocket";
 
-function ChatBar({ setMessages, messages, socket, userInfo }) {
-  console.log("messages:::=>",messages);
-  const [inputValue, setInputValue] = useState("");
+function ChatBar({ userInfo }) {
+  const { userInfo:userId } = useSelector((state) => state.auth);
+  console.log("userInfo:::",userInfo);
+  const [message, setMessage] = useState("");
 
-  const inputValueHandler = (e) => {
-    setInputValue(e.target.value);
-  };
+  // Replace hardcoded values with dynamic ones from userInfo (if available)
+  // const userId = "66e4811bac7e551824f6f138";
+  // const recipientId = "66e480ccac7e551824f6f135";
+console.log("userId:::",userId);
+  const { messages, sendMessage } = useSocket(userId._id, userInfo?.recipientId);
 
-  useEffect(() => {
-    if (!socket) {
-      console.error("Socket is not defined");
-      return;
-    }
-
-    // Log to ensure useEffect is called and socket is valid
-    console.log("useEffect called, Socket instance:", socket);
-
-    // Listen for incoming messages from the server
-    const messageListener = (message) => {
-      console.log("Message received from backend:", message);
-      setMessages((prevMessages) => [...prevMessages, message.message]);
-    };
-
-    // Subscribe to the "message" event
-    socket.on("message", messageListener);
-
-    // Clean up the listener when the component unmounts
-    return () => {
-      console.log("Cleaning up socket listener");
-      socket.off("message", messageListener);
-    };
-  }, [socket, setMessages]);
-
-  const onSubmit = (event) => {
-    event.preventDefault();
-    if (inputValue.trim() !== "") {
-      console.log("Sending message:", inputValue);
-      socket.emit("sendMessage", { userId: userInfo?.userId, message: inputValue });
-      setInputValue(""); // Reset the input field after submitting
-    }
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    sendMessage(message);
+    setMessage(""); // Clear the input field
   };
 
   return (
@@ -82,12 +59,12 @@ function ChatBar({ setMessages, messages, socket, userInfo }) {
       </div>
       <div className="chat__footer">
         <InsertEmoticon />
-        <form onSubmit={onSubmit}>
+        <form onSubmit={handleSendMessage}>
           <input
             type="text"
             placeholder="Type a Message"
-            value={inputValue}
-            onChange={inputValueHandler}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
           />
           <button type="submit">Send a message</button>
         </form>
